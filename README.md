@@ -114,9 +114,9 @@ LIVEKIT_API_SECRET=your_api_secret
 ## Architecture
 
 ```
-┌─────────────┐     WebRTC      ┌──────────────────┐
+┌─────────────┐     WebRTC       ┌──────────────────┐
 │   Browser   │ ◄──────────────► │ LiveKit Server   │
-│  (Client)   │                  │  (localhost:7880) │
+│  (Client)   │                  │  (localhost:7880)│
 └─────────────┘                  └──────────────────┘
                                           │
                                     WebSocket
