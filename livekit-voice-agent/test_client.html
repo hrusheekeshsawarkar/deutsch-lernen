@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveKit Voice Agent Test Client</title>
+    <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #disconnect {
+            background-color: #f44336;
+        }
+        #disconnect:hover {
+            background-color: #da190b;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        #audioContainer {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 LiveKit Voice Agent Test Client</h1>
+        
+        <div class="info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Make sure your agent is running: <code>uv run agent.py dev</code></li>
+                <li>Make sure LiveKit server is running locally on port 7880</li>
+                <li>Click "Connect to Agent" below</li>
+                <li>Allow microphone access when prompted</li>
+                <li>Start talking to your AI assistant!</li>
+            </ol>
+        </div>
+
+        <div>
+            <button id="connect" onclick="connectToRoom()">Connect to Agent</button>
+            <button id="disconnect" onclick="disconnectFromRoom()" disabled>Disconnect</button>
+        </div>
+
+        <div id="status">
+            Status: Not connected
+        </div>
+
+        <div id="audioContainer"></div>
+    </div>
+
+    <script>
+        let room = null;
+        const LIVEKIT_URL = 'ws://localhost:7880';
+        const API_KEY = 'devkey';
+        const API_SECRET = 'secret';
+
+        function updateStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.style.backgroundColor = isError ? '#ffebee' : '#e3f2fd';
+            statusDiv.style.color = isError ? '#c62828' : '#1976d2';
+            console.log(message);
+        }
+
+        async function generateToken(roomName, participantName) {
+            // In production, generate token on backend. For local dev, we'll use a simple token
+            // Using livekit-server-sdk-js would be ideal, but for simplicity we'll make a request
+            
+            // For local development, we can use the API endpoint
+            const response = await fetch('http://localhost:7880/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    api_key: API_KEY,
+                    api_secret: API_SECRET,
+                    room_name: roomName,
+                    participant_name: participantName,
+                    grants: {
+                        roomJoin: true,
+                        canPublish: true,
+                        canSubscribe: true,
+                    }
+                })
+            }).catch(err => {
+                console.error('Token generation failed, falling back to client-side', err);
+                return null;
+            });
+
+            if (response && response.ok) {
+                const data = await response.json();
+                return data.token;
+            }
+
+            // Fallback: Generate a simple token client-side (works with devkey/secret in dev mode)
+            // Note: In production, ALWAYS generate tokens server-side!
+            return await generateDevToken(roomName, participantName);
+        }
+
+        async function generateDevToken(roomName, participantName) {
+            // This is a simplified token generation for dev mode
+            // In production, use proper JWT signing on the backend
+            const encoder = new TextEncoder();
+            const key = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(API_SECRET),
+                { name: 'HMAC', hash: 'SHA-256' },
+                false,
+                ['sign']
+            );
+
+            const header = { alg: 'HS256', typ: 'JWT' };
+            const now = Math.floor(Date.now() / 1000);
+            const payload = {
+                iss: API_KEY,
+                sub: participantName,
+                exp: now + 3600, // 1 hour
+                nbf: now,
+                video: {
+                    roomJoin: true,
+                    room: roomName,
+                    canPublish: true,
+                    canSubscribe: true,
+                }
+            };
+
+            const base64url = (data) => {
+                return btoa(String.fromCharCode(...new Uint8Array(data)))
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=/g, '');
+            };
+
+            const headerB64 = base64url(encoder.encode(JSON.stringify(header)));
+            const payloadB64 = base64url(encoder.encode(JSON.stringify(payload)));
+            const signatureInput = `${headerB64}.${payloadB64}`;
+            
+            const signature = await crypto.subtle.sign(
+                'HMAC',
+                key,
+                encoder.encode(signatureInput)
+            );
+
+            return `${signatureInput}.${base64url(signature)}`;
+        }
+
+        async function connectToRoom() {
+            try {
+                updateStatus('Connecting to LiveKit server...');
+                document.getElementById('connect').disabled = true;
+
+                const roomName = 'test-room-' + Date.now();
+                const participantName = 'User-' + Math.random().toString(36).substring(7);
+
+                const token = await generateDevToken(roomName, participantName);
+                
+                room = new LivekitClient.Room({
+                    adaptiveStream: true,
+                    dynacast: true,
+                });
+
+                // Set up event listeners
+                room.on(LivekitClient.RoomEvent.Connected, () => {
+                    updateStatus('✅ Connected! The agent should join shortly. Start speaking!');
+                    document.getElementById('disconnect').disabled = false;
+                });
+
+                room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                    console.log('Track subscribed:', track.kind, 'from', participant.identity);
+                    if (track.kind === 'audio') {
+                        const audioElement = track.attach();
+                        document.getElementById('audioContainer').appendChild(audioElement);
+                        updateStatus(`✅ Connected and receiving audio from ${participant.identity}`);
+                    }
+                });
+
+                room.on(LivekitClient.RoomEvent.ParticipantConnected, (participant) => {
+                    updateStatus(`🤖 Agent "${participant.identity}" joined the room!`);
+                });
+
+                room.on(LivekitClient.RoomEvent.Disconnected, () => {
+                    updateStatus('Disconnected from room');
+                    document.getElementById('connect').disabled = false;
+                    document.getElementById('disconnect').disabled = true;
+                });
+
+                room.on(LivekitClient.RoomEvent.Reconnecting, () => {
+                    updateStatus('Reconnecting...');
+                });
+
+                room.on(LivekitClient.RoomEvent.Reconnected, () => {
+                    updateStatus('✅ Reconnected!');
+                });
+
+                // Connect to the room
+                await room.connect(LIVEKIT_URL, token);
+                
+                // Publish microphone
+                await room.localParticipant.setMicrophoneEnabled(true);
+                updateStatus('✅ Connected! Waiting for agent to join...');
+
+            } catch (error) {
+                console.error('Error connecting to room:', error);
+                updateStatus(`❌ Error: ${error.message}`, true);
+                document.getElementById('connect').disabled = false;
+            }
+        }
+
+        async function disconnectFromRoom() {
+            if (room) {
+                await room.disconnect();
+                room = null;
+                updateStatus('Disconnected');
+                document.getElementById('connect').disabled = false;
+                document.getElementById('disconnect').disabled = true;
+                document.getElementById('audioContainer').innerHTML = '';
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (room) {
+                room.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
+
