@@ -7,6 +7,33 @@ A German language learning application powered by LiveKit voice agents.
 - **livekit-voice-agent/** - Python-based voice AI agent using LiveKit, OpenAI, Deepgram, and ElevenLabs
 - **lk-ui/** - Next.js web interface for the voice agent
 
+## Quick Start
+
+```bash
+# 1. Install LiveKit server
+brew install livekit  # macOS
+
+# 2. Setup backend
+cd livekit-voice-agent
+uv sync  # Install Python dependencies
+# Add your API keys to .env.local
+
+# 3. Setup frontend
+cd ../lk-ui
+pnpm install  # Install Node.js dependencies
+
+# 4. Run everything (3 terminals)
+# Terminal 1: LiveKit server
+livekit-server --dev
+
+# Terminal 2: Voice agent (auto-downloads models on first run)
+cd livekit-voice-agent && uv run agent.py dev
+
+# Terminal 3: Frontend
+cd lk-ui && pnpm dev
+# Open http://localhost:3000
+```
+
 ## Prerequisites
 
 - Python 3.13+
@@ -16,7 +43,63 @@ A German language learning application powered by LiveKit voice agents.
 
 ## Setup
 
-### 1. Environment Variables
+### 1. Install LiveKit Server (Backend)
+
+**macOS (using Homebrew):**
+```bash
+brew install livekit
+```
+
+**Linux:**
+```bash
+curl -sSL https://get.livekit.io | bash
+```
+
+**Windows:**
+Download from [LiveKit Releases](https://github.com/livekit/livekit/releases)
+
+**Verify installation:**
+```bash
+livekit-server --version
+```
+
+### 2. Setup Backend (Python Agent)
+
+**Install Python dependencies using uv:**
+```bash
+cd livekit-voice-agent
+uv sync
+```
+
+**Download AI models:**
+
+The first time you run the agent, it will automatically download the required models:
+- Silero VAD model (voice activity detection)
+- Multilingual turn detection model
+
+This happens automatically on first run, but you can trigger it manually:
+```bash
+uv run agent.py console
+# Press Ctrl+C after models are downloaded
+```
+
+### 3. Setup Frontend (Next.js UI)
+
+**Install Node.js dependencies:**
+```bash
+cd lk-ui
+pnpm install
+# If you don't have pnpm: npm install -g pnpm
+```
+
+**Configure frontend environment:**
+
+Create a `.env.local` file in the `lk-ui/` directory:
+```bash
+NEXT_PUBLIC_LIVEKIT_URL=ws://localhost:7880
+```
+
+### 4. Configure Environment Variables
 
 Create a `.env.local` file in the `livekit-voice-agent/` directory:
 
@@ -36,49 +119,54 @@ DEEPGRAM_API_KEY=your_deepgram_api_key
 
 ⚠️ **Never commit `.env.local` to version control!**
 
-### 2. Install Dependencies
-
-**Python Agent:**
-```bash
-cd livekit-voice-agent
-uv sync
-```
-
-**Next.js UI:**
-```bash
-cd lk-ui
-pnpm install
-```
-
 ## Running Locally
 
-### 1. Start LiveKit Server
+You'll need **three terminal windows** running simultaneously:
+
+### Terminal 1: Start LiveKit Server (Backend)
 
 ```bash
 livekit-server --dev
 ```
 
-The server will run on `ws://localhost:7880` with default dev credentials.
+The server will run on `ws://localhost:7880` with default dev credentials (`devkey`/`secret`).
 
-### 2. Start the Voice Agent
+**Expected output:**
+```
+INFO    Starting LiveKit server
+INFO    Server listening on :7880
+```
+
+### Terminal 2: Start the Voice Agent (Backend)
 
 ```bash
 cd livekit-voice-agent
 uv run agent.py dev
 ```
 
-### 3. Test with the Web Client
+This will start the Python agent and download AI models on first run (Silero VAD, multilingual turn detector).
 
-**Option A: Simple HTML Test Client**
+**Expected output:**
+```
+INFO    livekit.agents     registered worker {"url": "ws://localhost:7880"}
+```
+
+### Terminal 3: Start the Frontend
+
+**Option A: Simple HTML Test Client (Need to work on this, not working currently, Quick Test)**
 ```bash
 open livekit-voice-agent/test_client.html
 ```
 
-**Option B: Next.js UI**
+**Option B: Next.js UI (Full Featured)**
 ```bash
 cd lk-ui
 pnpm dev
 ```
+
+Then open http://localhost:3000 in your browser.
+
+**Note:** Allow microphone access when prompted, then start speaking to interact with the AI assistant!
 
 ## Features
 
