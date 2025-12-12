@@ -1,10 +1,29 @@
-# Deutsch Lernen - LiveKit Voice AI Agent
+# Deutsch Lernen - AI German Language Tutor
 
-A German language learning application powered by LiveKit voice agents.
+An interactive German language learning application powered by LiveKit voice AI. Practice speaking German with Emma, your AI tutor who systematically teaches A1-A2 level German through conversation.
+
+## How It Works
+
+Meet **Emma**, your AI German tutor! She'll guide you through German learning with this approach:
+
+1. **Assessment** - Emma first asks about your current level (complete beginner or some basics)
+2. **Structured Curriculum**:
+   - **A1 Level**: Greetings, introductions, numbers, colors, days/months, basic verbs (sein, haben), present tense
+   - **A2 Level**: Past tense, modal verbs, comparatives, prepositions, directions, expressing opinions
+3. **Interactive Practice** - Learn one topic, then practice it by speaking German
+4. **Immediate Feedback** - Get gentle corrections and explanations in real-time
+5. **Progress & Review** - Master topics before moving forward, with regular review
+
+**Example session:**
+```
+Emma: "Hello! I'm Emma, your German tutor. Are you a complete beginner or do you have some German knowledge?"
+You: "I'm a complete beginner"
+Emma: "Perfect! Let's start with greetings. In German, hello is 'Hallo', good morning is 'Guten Morgen'..."
+```
 
 ## Project Structure
 
-- **livekit-voice-agent/** - Python-based voice AI agent using LiveKit, OpenAI, Deepgram, and ElevenLabs
+- **livekit-voice-agent/** - Python-based voice AI tutor using LiveKit, OpenAI, and Deepgram
 - **lk-ui/** - Next.js web interface for the voice agent
 
 ## Quick Start
@@ -170,10 +189,19 @@ Then open http://localhost:3000 in your browser.
 
 ## Features
 
-- 🎤 Real-time voice interaction
-- 🗣️ Deepgram speech-to-text
-- 🤖 OpenAI GPT-4o-mini for conversation
-- 🔊 ElevenLabs text-to-speech
+### Language Learning
+- 📚 **Systematic A1-A2 German curriculum** - Structured progression from basics to intermediate
+- 🎓 **Interactive lessons** - Learn through natural conversation, not lectures
+- 🗣️ **Speaking practice** - Practice pronunciation and get immediate feedback
+- ✅ **Instant corrections** - Gentle guidance when you make mistakes
+- 🎯 **One topic at a time** - Master each concept before moving forward
+- 🔄 **Progressive review** - Reinforce previous lessons while learning new material
+
+### Technical Features
+- 🎤 Real-time voice interaction with low latency
+- 🗣️ Deepgram speech-to-text for accurate voice recognition
+- 🤖 OpenAI GPT-4o-mini powered AI tutor
+- 🔊 Natural text-to-speech voice
 - 🎯 Voice activity detection (Silero VAD)
 - 🌍 Multilingual turn detection
 - 🎨 Modern Next.js UI
