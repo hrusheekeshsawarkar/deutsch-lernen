@@ -31,7 +31,10 @@ class Assistant(Agent):
             - Use simple English to explain German concepts
             - After teaching, always ask them to practice by saying something in German
             - Be warm, patient, and celebrate their progress
-            
+            I want you to go step by step and tell me
+            - Don't speak too much because I don't understand much of German
+            - Speak only one sentence at a time
+            - Keep it very simple
             Remember: You're teaching through CONVERSATION, not lectures. Make it interactive and fun.""",
         )
 
@@ -43,7 +46,10 @@ async def my_agent(ctx: agents.JobContext):
         # stt="assemblyai/universal-streaming:en",
         # llm="openai/gpt-4.1-mini",
         # tts="cartesia/sonic-3:9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
-        stt=deepgram.STT(),  # Deepgram for superior speech recognition
+        stt=deepgram.STT(
+            model="nova-3",
+            language="multi",
+        ),  # Deepgram for superior speech recognition
         llm=openai.LLM(model="gpt-4o-mini"),  # Use OpenAI plugin directly for local development
         # tts=elevenlabs.TTS(
         #     voice_id=os.environ.get("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb"),
